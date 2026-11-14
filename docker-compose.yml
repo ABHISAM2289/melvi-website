@@ -1,0 +1,16 @@
+services:
+  melvi-postgres:
+    image: postgres:17-alpine
+    container_name: melvi-postgres
+    restart: always
+    environment:
+      POSTGRES_DB: melvi_db
+      POSTGRES_USER: melvi_user
+      POSTGRES_PASSWORD: melvipassword123
+    ports:
+      - "5434:5432"
+    volumes:
+      - melvi_pgdata:/var/lib/postgresql/data
+
+volumes:
+  melvi_pgdata:

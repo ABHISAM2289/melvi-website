@@ -1,0 +1,210 @@
+"use strict";
+var __decorate = (this && this.__decorate) || function (decorators, target, key, desc) {
+    var c = arguments.length, r = c < 3 ? target : desc === null ? desc = Object.getOwnPropertyDescriptor(target, key) : desc, d;
+    if (typeof Reflect === "object" && typeof Reflect.decorate === "function") r = Reflect.decorate(decorators, target, key, desc);
+    else for (var i = decorators.length - 1; i >= 0; i--) if (d = decorators[i]) r = (c < 3 ? d(r) : c > 3 ? d(target, key, r) : d(target, key)) || r;
+    return c > 3 && r && Object.defineProperty(target, key, r), r;
+};
+var __metadata = (this && this.__metadata) || function (k, v) {
+    if (typeof Reflect === "object" && typeof Reflect.metadata === "function") return Reflect.metadata(k, v);
+};
+var DatabaseService_1;
+Object.defineProperty(exports, "__esModule", { value: true });
+exports.DatabaseService = void 0;
+const common_1 = require("@nestjs/common");
+const pg_1 = require("pg");
+let DatabaseService = DatabaseService_1 = class DatabaseService {
+    constructor() {
+        this.logger = new common_1.Logger(DatabaseService_1.name);
+        this.isConnected = false;
+        this.pool = new pg_1.Pool({
+            host: process.env.DB_HOST || 'localhost',
+            port: parseInt(process.env.DB_PORT || '5434', 10),
+            user: process.env.DB_USER || 'melvi_user',
+            password: process.env.DB_PASSWORD || 'melvipassword123',
+            database: process.env.DB_NAME || 'melvi_db',
+            max: 10,
+            idleTimeoutMillis: 30000,
+        });
+    }
+    async onModuleInit() {
+        try {
+            const client = await this.pool.connect();
+            this.isConnected = true;
+            this.logger.log(' Connected to PostgreSQL Docker container (melvi_db)');
+            client.release();
+            await this.initSchema();
+            await this.seedInitialData();
+        }
+        catch (err) {
+            this.isConnected = false;
+            this.logger.warn(` PostgreSQL connection note: ${err.message}. Using resilient hybrid storage.`);
+        }
+    }
+    async onModuleDestroy() {
+        await this.pool.end();
+    }
+    async query(text, params) {
+        if (!this.isConnected) {
+            return { rows: [] };
+        }
+        return this.pool.query(text, params);
+    }
+    async initSchema() {
+        if (!this.isConnected)
+            return;
+        await this.pool.query(`
+      CREATE TABLE IF NOT EXISTS users (
+        id VARCHAR(64) PRIMARY KEY,
+        name VARCHAR(255) NOT NULL,
+        username VARCHAR(64) UNIQUE,
+        email VARCHAR(255) UNIQUE NOT NULL,
+        password VARCHAR(255),
+        role VARCHAR(32) NOT NULL DEFAULT 'customer',
+        phone VARCHAR(64),
+        avatar TEXT,
+        created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+      );
+      ALTER TABLE users ADD COLUMN IF NOT EXISTS password VARCHAR(255);
+      ALTER TABLE users ADD COLUMN IF NOT EXISTS username VARCHAR(64);
+
+      CREATE TABLE IF NOT EXISTS catalog_products (
+        id VARCHAR(64) PRIMARY KEY,
+        name VARCHAR(255) NOT NULL,
+        tagline VARCHAR(255),
+        price NUMERIC(10,2) NOT NULL,
+        original_price NUMERIC(10,2),
+        rating NUMERIC(3,1) DEFAULT 4.9,
+        reviews_count INT DEFAULT 42,
+        category VARCHAR(64) NOT NULL,
+        image TEXT NOT NULL,
+        description TEXT NOT NULL,
+        badge VARCHAR(64),
+        cocoa_percentage INT,
+        tags TEXT[],
+        is_featured BOOLEAN DEFAULT false,
+        in_stock BOOLEAN DEFAULT true,
+        created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+      );
+      ALTER TABLE catalog_products ADD COLUMN IF NOT EXISTS in_stock BOOLEAN DEFAULT true;
+
+      CREATE TABLE IF NOT EXISTS promo_banners (
+        id VARCHAR(64) PRIMARY KEY,
+        title VARCHAR(255) NOT NULL,
+        highlight VARCHAR(255),
+        subtitle TEXT,
+        cta_text VARCHAR(64),
+        code VARCHAR(32),
+        bg_gradient VARCHAR(128),
+        image TEXT,
+        link_type VARCHAR(64),
+        is_active BOOLEAN DEFAULT true
+      );
+      ALTER TABLE promo_banners ADD COLUMN IF NOT EXISTS image TEXT;
+      ALTER TABLE promo_banners ADD COLUMN IF NOT EXISTS link_type VARCHAR(64);
+
+      -- Ensure existing banners have valid high-contrast gradients and images
+      UPDATE promo_banners 
+      SET bg_gradient = 'from-amber-500 to-amber-600', 
+          image = COALESCE(NULLIF(image, ''), '/images/melvi-founder-box.jpg'),
+          link_type = COALESCE(NULLIF(link_type, ''), 'custom_box')
+      WHERE id = 'banner-1' AND (image IS NULL OR image = '' OR bg_gradient LIKE '%900%');
+
+      UPDATE promo_banners 
+      SET bg_gradient = 'from-rose-900 to-amber-950', 
+          image = COALESCE(NULLIF(image, ''), '/images/melvi-bonbons.jpg'),
+          link_type = COALESCE(NULLIF(link_type, ''), 'store')
+      WHERE id = 'banner-2' AND (image IS NULL OR image = '' OR bg_gradient LIKE '%cocoa%');
+
+      UPDATE promo_banners 
+      SET bg_gradient = 'from-cyan-900 to-blue-950',
+          link_type = COALESCE(NULLIF(link_type, ''), 'tracking')
+      WHERE id = 'banner-3' AND (bg_gradient LIKE '%velvet%' OR bg_gradient IS NULL OR bg_gradient = '');
+
+      CREATE TABLE IF NOT EXISTS orders (
+        id VARCHAR(64) PRIMARY KEY,
+        tracking_number VARCHAR(64) UNIQUE NOT NULL,
+        user_id VARCHAR(64),
+        customer_name VARCHAR(255) NOT NULL,
+        customer_email VARCHAR(255) NOT NULL,
+        customer_phone VARCHAR(64),
+        shipping_address TEXT NOT NULL,
+        city VARCHAR(128),
+        pincode VARCHAR(32),
+        items_json JSONB NOT NULL,
+        custom_box_specs JSONB,
+        custom_notes TEXT,
+        gift_message TEXT,
+        total_amount NUMERIC(10,2) NOT NULL,
+        payment_method VARCHAR(64) NOT NULL,
+        payment_status VARCHAR(64) NOT NULL DEFAULT 'PAID',
+        order_status VARCHAR(64) NOT NULL DEFAULT 'ARTISAN_CRAFTING',
+        courier_name VARCHAR(128) DEFAULT 'Melvi Cold-Chain Express',
+        estimated_delivery VARCHAR(64),
+        current_checkpoint VARCHAR(255),
+        created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+        updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+      );
+
+      CREATE TABLE IF NOT EXISTS tracking_events (
+        id VARCHAR(64) PRIMARY KEY,
+        order_id VARCHAR(64) REFERENCES orders(id) ON DELETE CASCADE,
+        status VARCHAR(64) NOT NULL,
+        title VARCHAR(255) NOT NULL,
+        description TEXT NOT NULL,
+        location VARCHAR(128),
+        timestamp TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+      );
+
+      CREATE TABLE IF NOT EXISTS user_addresses (
+        id VARCHAR(64) PRIMARY KEY,
+        user_id VARCHAR(64) NOT NULL,
+        label VARCHAR(64) DEFAULT 'Home',
+        recipient_name VARCHAR(255),
+        phone VARCHAR(64),
+        address_line TEXT NOT NULL,
+        city VARCHAR(128) NOT NULL,
+        state VARCHAR(128) DEFAULT 'Maharashtra',
+        pincode VARCHAR(32) NOT NULL,
+        is_default BOOLEAN DEFAULT false,
+        created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+        updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+      );
+
+      CREATE TABLE IF NOT EXISTS promo_coupons (
+        id VARCHAR(64) PRIMARY KEY,
+        code VARCHAR(32) UNIQUE NOT NULL,
+        discount_type VARCHAR(32) NOT NULL DEFAULT 'PERCENTAGE',
+        discount_value NUMERIC(10,2) NOT NULL,
+        min_order_amount NUMERIC(10,2) DEFAULT 0,
+        max_discount_amount NUMERIC(10,2) DEFAULT 0,
+        description TEXT,
+        is_active BOOLEAN DEFAULT true,
+        usage_count INT DEFAULT 0,
+        created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+      );
+    `);
+        this.logger.log(' Verified/Created Melvi database tables');
+    }
+    async seedInitialData() {
+        if (!this.isConnected)
+            return;
+        try {
+            await this.pool.query(`
+        INSERT INTO users (id, name, username, email, password, role, phone, avatar) VALUES 
+        ('usr-admin-1', 'Melvi Head Chocolatier (Admin)', 'admin', 'admin@melvi.com', '$2b$10$oX1Q0V47c.s2L7L.rM1aVuqf0GzT7m9q0w3lq1q0w3lq1q0w3lq1q', 'admin', '+91 98765 43210', '/images/melvi-official-logo.png')
+        ON CONFLICT (email) DO UPDATE SET role = 'admin', username = 'admin';
+      `);
+            this.logger.log(' Verified Platform Admin account in PostgreSQL');
+        }
+        catch (err) {
+            this.logger.warn(` Admin seed notice: ${err.message}`);
+        }
+    }
+};
+exports.DatabaseService = DatabaseService;
+exports.DatabaseService = DatabaseService = DatabaseService_1 = __decorate([
+    (0, common_1.Injectable)(),
+    __metadata("design:paramtypes", [])
+], DatabaseService);
+//# sourceMappingURL=database.service.js.map

@@ -1,0 +1,54 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1200 380" width="1200" height="380">
+  <defs>
+    <linearGradient id="roseBgGrad" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" stop-color="#4c0519" />
+      <stop offset="50%" stop-color="#881337" />
+      <stop offset="100%" stop-color="#25060e" />
+    </linearGradient>
+    <linearGradient id="goldGrad2" x1="0%" y1="0%" x2="100%" y2="0%">
+      <stop offset="0%" stop-color="#f59e0b" />
+      <stop offset="50%" stop-color="#fef08a" />
+      <stop offset="100%" stop-color="#d97706" />
+    </linearGradient>
+    <pattern id="rosePattern" width="40" height="40" patternUnits="userSpaceOnUse">
+      <circle cx="20" cy="20" r="1.2" fill="#fef08a" fill-opacity="0.12" />
+    </pattern>
+  </defs>
+
+  <!-- Background -->
+  <rect width="1200" height="380" rx="28" fill="url(#roseBgGrad)" />
+  <rect width="1200" height="380" rx="28" fill="url(#rosePattern)" />
+  <rect x="12" y="12" width="1176" height="356" rx="20" fill="none" stroke="url(#goldGrad2)" stroke-width="1.5" stroke-opacity="0.35" />
+
+  <!-- Content Left -->
+  <g transform="translate(60, 55)">
+    <!-- Promo Code Badge -->
+    <rect x="0" y="0" width="190" height="32" rx="16" fill="#000000" fill-opacity="0.4" stroke="url(#goldGrad2)" stroke-width="1.2" />
+    <text x="95" y="21" font-family="'Plus Jakarta Sans', system-ui, sans-serif" font-size="12" font-weight="900" fill="#fef08a" text-anchor="middle" letter-spacing="2">CODE: MELVIGOLD</text>
+
+    <!-- Main Title -->
+    <text x="0" y="90" font-family="'Cinzel', 'Playfair Display', Georgia, serif" font-size="44" font-weight="900" fill="#ffffff" letter-spacing="1">Flat 15% Off All Bonbons</text>
+
+    <!-- Subtitle -->
+    <text x="0" y="132" font-family="'Plus Jakarta Sans', system-ui, sans-serif" font-size="18" fill="#fecdd3" letter-spacing="0.5">Handcrafted with single-origin Madagascan cocoa &amp; 24K edible gold</text>
+
+    <!-- CTA Pill -->
+    <g transform="translate(0, 175)">
+      <rect x="0" y="0" width="230" height="46" rx="23" fill="url(#goldGrad2)" />
+      <text x="115" y="29" font-family="'Plus Jakarta Sans', system-ui, sans-serif" font-size="14" font-weight="bold" fill="#4c0519" text-anchor="middle" letter-spacing="1">SHOP CONFECTIONS →</text>
+    </g>
+  </g>
+
+  <!-- Graphic Elements Right -->
+  <g transform="translate(860, 40)">
+    <circle cx="150" cy="150" r="140" fill="#f43f5e" fill-opacity="0.1" />
+    <circle cx="150" cy="150" r="110" fill="none" stroke="url(#goldGrad2)" stroke-width="1" stroke-dasharray="6,6" stroke-opacity="0.4" />
+    
+    <g transform="translate(150, 150)">
+      <rect x="-65" y="-65" width="130" height="130" rx="26" fill="#350614" stroke="url(#goldGrad2)" stroke-width="2.5" />
+      <text x="0" y="8" font-family="'Cinzel', 'Playfair Display', serif" font-size="34" font-weight="900" fill="#ffffff" text-anchor="middle">15%</text>
+      <text x="0" y="32" font-family="'Plus Jakarta Sans', sans-serif" font-size="14" font-weight="bold" fill="#fef08a" text-anchor="middle" letter-spacing="2">OFF</text>
+      <text x="0" y="85" font-family="'Cinzel', 'Playfair Display', serif" font-size="11" font-weight="bold" fill="#fef08a" text-anchor="middle" letter-spacing="2">LIMITED EDITION</text>
+    </g>
+  </g>
+</svg>
