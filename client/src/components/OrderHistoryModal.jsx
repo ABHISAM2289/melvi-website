@@ -1,4 +1,5 @@
 import React, { useState, useEffect } from 'react';
+import { apiFetch } from '../lib/api';
 import { X, Package, Clock, Truck, ShieldCheck, Snowflake, ArrowRight, AlertCircle, RefreshCw } from 'lucide-react';
 
 export default function OrderHistoryModal({ isOpen, onClose, currentUser, onSelectOrderToTrack }) {
@@ -12,7 +13,7 @@ export default function OrderHistoryModal({ isOpen, onClose, currentUser, onSele
     setLoading(true);
     try {
       const identifier = currentUser.email || currentUser.id || '';
-      const res = await fetch(`/api/orders/history?identifier=${encodeURIComponent(identifier)}`);
+      const res = await apiFetch(`/api/orders/history?identifier=${encodeURIComponent(identifier)}`);
       const data = await res.json();
       setOrders(data.orders || []);
     } catch (err) {

@@ -1,4 +1,5 @@
 import React, { useState, useEffect } from 'react';
+import { apiFetch } from '../lib/api';
 import { Search, Package, Snowflake, CheckCircle2, Truck, ShieldCheck, MapPin, AlertCircle, Clock, ChevronRight, RefreshCw, ShoppingBag } from 'lucide-react';
 
 export default function BlinkitOrderTracker({ 
@@ -19,7 +20,7 @@ export default function BlinkitOrderTracker({
     try {
       const identifier = currentUser?.email || currentUser?.id || currentUser?.username || '';
       let url = identifier ? `/api/orders/history?identifier=${encodeURIComponent(identifier)}` : '/api/orders';
-      const res = await fetch(url);
+      const res = await apiFetch(url);
       const data = await res.json();
       const list = data.orders || [];
       setUserOrders(list);
@@ -46,7 +47,7 @@ export default function BlinkitOrderTracker({
     setError(null);
 
     try {
-      const res = await fetch(`/api/orders/track/${encodeURIComponent(code.trim())}`);
+      const res = await apiFetch(`/api/orders/track/${encodeURIComponent(code.trim())}`);
       const data = await res.json();
       if (!res.ok) {
         throw new Error(data.message || 'Tracking number not found');

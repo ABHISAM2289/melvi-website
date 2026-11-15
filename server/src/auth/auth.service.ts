@@ -28,27 +28,18 @@ export interface UserAddress {
   createdAt?: string;
 }
 
-const JWT_SECRET = process.env.JWT_SECRET || 'melvi_jwt_secret_key_2026_haute_chocolaterie_luxury';
-
 @Injectable()
 export class AuthService {
   private inMemoryUsers: User[] = [];
   private inMemoryAddresses: UserAddress[] = [];
+  private readonly jwtSecret: string;
 
   constructor(@Inject(DatabaseService) private readonly db: DatabaseService) {
-    // Seed default admin with hashed password
-    const adminPassHash = bcrypt.hashSync('admin123', 10);
-    this.inMemoryUsers.push({
-      id: 'usr-admin-1',
-      name: 'Melvi Master Chocolatier',
-      username: 'admin',
-      email: 'admin@melvi.com',
-      password: adminPassHash,
-      role: 'admin',
-      phone: '+91 98765 43210',
-      avatar: '/images/melvi-official-logo.png',
-    });
-
+    const configuredSecret = process.env.JWT_SECRET;
+    if (process.env.NODE_ENV === 'production' && (!configuredSecret || configuredSecret.length < 32)) {
+      throw new Error('JWT_SECRET must be configured with at least 32 characters in production.');
+    }
+    this.jwtSecret = configuredSecret || 'local-development-only-jwt-secret';
   }
 
   generateToken(user: Omit<User, 'password'>): string {
@@ -60,14 +51,14 @@ export class AuthService {
         email: user.email,
         role: user.role,
       },
-      JWT_SECRET,
+      this.jwtSecret,
       { expiresIn: '7d' }
     );
   }
 
   verifyToken(token: string): any {
     try {
-      return jwt.verify(token, JWT_SECRET);
+      return jwt.verify(token, this.jwtSecret);
     } catch {
       throw new UnauthorizedException('Session expired or invalid token. Please sign in again.');
     }
@@ -92,7 +83,7 @@ export class AuthService {
       throw new BadRequestException('Username must be at least 3 characters (letters, numbers, underscores).');
     }
 
-    const assignedRole = data.role || (cleanEmail.includes('admin') || cleanUsername.includes('admin') ? 'admin' : 'customer');
+    const assignedRole = 'customer';
     const hashedPassword = await bcrypt.hash(data.password, 10);
 
     // Check DB
@@ -208,9 +199,11 @@ export class AuthService {
     }
 
     if (expectedRole && foundUser.role !== expectedRole) {
-      if (expectedRole === 'admin') {
-        throw new UnauthorizedException('This account does not have platform administrator privileges.');
-      }
+      throw new UnauthorizedException(
+        expectedRole === 'admin'
+          ? 'This account does not have platform administrator privileges.'
+          : 'Please sign in with a customer account.'
+      );
     }
 
     const { password: _, ...safeUser } = foundUser;

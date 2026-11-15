@@ -67,6 +67,7 @@ npm run build
 npm start
 ```
 * **API Root:** `http://127.0.0.1:3001/api`
+* The database provisions the admin account from `ADMIN_EMAIL` and `ADMIN_PASSWORD` (minimum 16 characters). Set these in the terminal before starting the server; registration only creates customer accounts.
 
 ### 3. Frontend (React + Vite)
 ```bash
@@ -75,6 +76,33 @@ npm install
 npm run dev
 ```
 * **Store URL:** `http://localhost:5173`
+
+---
+
+## Client Review Deployment
+
+The app has a Vite/React frontend and a separate NestJS/PostgreSQL backend. Vercel can host the frontend; deploy the API and PostgreSQL on a Node host and managed PostgreSQL provider.
+
+### Vercel frontend
+
+1. Import the GitHub repository into Vercel and set **Root Directory** to `client`.
+2. Use `npm run build` as the build command and `dist` as the output directory.
+3. Set `VITE_API_URL` to the backend origin, without a trailing slash or `/api` (for example, `https://your-api.example.com`).
+4. Deploy and note the resulting Vercel origin.
+
+The `client/vercel.json` file keeps the `/admin` and `/store` client-side routes working after refresh.
+
+### API and database
+
+Deploy `server` as a Node.js service and attach a persistent PostgreSQL database. Configure the variables listed in [`server/.env.example`](./server/.env.example) in the hosting provider; do not use the local Docker credentials from `docker-compose.yml` in a hosted environment.
+
+- Set `DATABASE_URL` to the managed database connection string and `DB_SSL=true` only when the database provider requires TLS.
+- Set `JWT_SECRET` to a unique random value of at least 32 characters.
+- Set `ADMIN_EMAIL` and a private `ADMIN_PASSWORD` of at least 16 characters. The admin account is provisioned from these variables; public registration always creates customer accounts.
+- Set `CORS_ORIGINS` to the exact Vercel origin. If you add a custom domain, include that origin as well.
+- The database initializes its schema and sample catalog on first startup.
+
+The checkout payment flow is a **simulator** and does not charge a card or process real payments. Use this deployment only for client review, not live sales.
 
 ---
 
@@ -100,4 +128,3 @@ npm run dev
    * Live 16°C cold-chain package tracking.
    * Customer **Order History** drawer with past orders recap and 1-click live tracking.
    * Multi-method payment gateway simulator with celebration confetti.
-

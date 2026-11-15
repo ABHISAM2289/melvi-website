@@ -15,6 +15,7 @@ Object.defineProperty(exports, "__esModule", { value: true });
 exports.PaymentController = void 0;
 const common_1 = require("@nestjs/common");
 const payment_service_1 = require("./payment.service");
+const auth_guard_1 = require("../auth/auth.guard");
 let PaymentController = class PaymentController {
     constructor(paymentService) {
         this.paymentService = paymentService;
@@ -29,6 +30,7 @@ let PaymentController = class PaymentController {
 exports.PaymentController = PaymentController;
 __decorate([
     (0, common_1.Post)('create-intent'),
+    (0, common_1.UseGuards)(auth_guard_1.JwtAuthGuard),
     __param(0, (0, common_1.Body)()),
     __metadata("design:type", Function),
     __metadata("design:paramtypes", [Object]),
@@ -36,6 +38,7 @@ __decorate([
 ], PaymentController.prototype, "createIntent", null);
 __decorate([
     (0, common_1.Post)('verify'),
+    (0, common_1.UseGuards)(auth_guard_1.JwtAuthGuard),
     __param(0, (0, common_1.Body)()),
     __metadata("design:type", Function),
     __metadata("design:paramtypes", [Object]),

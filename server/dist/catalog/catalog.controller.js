@@ -15,6 +15,7 @@ Object.defineProperty(exports, "__esModule", { value: true });
 exports.CatalogController = void 0;
 const common_1 = require("@nestjs/common");
 const catalog_service_1 = require("./catalog.service");
+const auth_guard_1 = require("../auth/auth.guard");
 let CatalogController = class CatalogController {
     constructor(catalogService) {
         this.catalogService = catalogService;
@@ -81,6 +82,7 @@ __decorate([
 ], CatalogController.prototype, "getProducts", null);
 __decorate([
     (0, common_1.Post)('products'),
+    (0, common_1.UseGuards)(auth_guard_1.JwtAuthGuard, auth_guard_1.AdminGuard),
     __param(0, (0, common_1.Body)()),
     __metadata("design:type", Function),
     __metadata("design:paramtypes", [Object]),
@@ -88,6 +90,7 @@ __decorate([
 ], CatalogController.prototype, "addProduct", null);
 __decorate([
     (0, common_1.Put)('products/:id'),
+    (0, common_1.UseGuards)(auth_guard_1.JwtAuthGuard, auth_guard_1.AdminGuard),
     __param(0, (0, common_1.Param)('id')),
     __param(1, (0, common_1.Body)()),
     __metadata("design:type", Function),
@@ -96,6 +99,7 @@ __decorate([
 ], CatalogController.prototype, "updateProduct", null);
 __decorate([
     (0, common_1.Delete)('products/:id'),
+    (0, common_1.UseGuards)(auth_guard_1.JwtAuthGuard, auth_guard_1.AdminGuard),
     __param(0, (0, common_1.Param)('id')),
     __metadata("design:type", Function),
     __metadata("design:paramtypes", [String]),
@@ -110,6 +114,7 @@ __decorate([
 ], CatalogController.prototype, "getBanners", null);
 __decorate([
     (0, common_1.Post)('banners'),
+    (0, common_1.UseGuards)(auth_guard_1.JwtAuthGuard, auth_guard_1.AdminGuard),
     __param(0, (0, common_1.Body)()),
     __metadata("design:type", Function),
     __metadata("design:paramtypes", [Object]),
@@ -117,6 +122,7 @@ __decorate([
 ], CatalogController.prototype, "addBanner", null);
 __decorate([
     (0, common_1.Put)('banners/:id'),
+    (0, common_1.UseGuards)(auth_guard_1.JwtAuthGuard, auth_guard_1.AdminGuard),
     __param(0, (0, common_1.Param)('id')),
     __param(1, (0, common_1.Body)()),
     __metadata("design:type", Function),
@@ -125,6 +131,7 @@ __decorate([
 ], CatalogController.prototype, "updateBanner", null);
 __decorate([
     (0, common_1.Delete)('banners/:id'),
+    (0, common_1.UseGuards)(auth_guard_1.JwtAuthGuard, auth_guard_1.AdminGuard),
     __param(0, (0, common_1.Param)('id')),
     __metadata("design:type", Function),
     __metadata("design:paramtypes", [String]),
@@ -139,6 +146,7 @@ __decorate([
 ], CatalogController.prototype, "getCoupons", null);
 __decorate([
     (0, common_1.Post)('coupons'),
+    (0, common_1.UseGuards)(auth_guard_1.JwtAuthGuard, auth_guard_1.AdminGuard),
     __param(0, (0, common_1.Body)()),
     __metadata("design:type", Function),
     __metadata("design:paramtypes", [Object]),
@@ -146,6 +154,7 @@ __decorate([
 ], CatalogController.prototype, "createCoupon", null);
 __decorate([
     (0, common_1.Put)('coupons/:id'),
+    (0, common_1.UseGuards)(auth_guard_1.JwtAuthGuard, auth_guard_1.AdminGuard),
     __param(0, (0, common_1.Param)('id')),
     __param(1, (0, common_1.Body)()),
     __metadata("design:type", Function),
@@ -154,6 +163,7 @@ __decorate([
 ], CatalogController.prototype, "updateCoupon", null);
 __decorate([
     (0, common_1.Delete)('coupons/:id'),
+    (0, common_1.UseGuards)(auth_guard_1.JwtAuthGuard, auth_guard_1.AdminGuard),
     __param(0, (0, common_1.Param)('id')),
     __metadata("design:type", Function),
     __metadata("design:paramtypes", [String]),
@@ -168,6 +178,7 @@ __decorate([
 ], CatalogController.prototype, "validateCoupon", null);
 __decorate([
     (0, common_1.Post)('upload-r2'),
+    (0, common_1.UseGuards)(auth_guard_1.JwtAuthGuard, auth_guard_1.AdminGuard),
     __param(0, (0, common_1.Body)()),
     __metadata("design:type", Function),
     __metadata("design:paramtypes", [Object]),

@@ -1,14 +1,15 @@
 import React, { useState } from 'react';
-import { X, User, Lock, Mail, ShieldCheck, Sparkles, ArrowRight } from 'lucide-react';
+import { apiFetch } from '../lib/api';
+import { X, User, Lock, Mail, ArrowRight } from 'lucide-react';
 
 export default function AuthModal({ isOpen, onClose, onLoginSuccess }) {
   if (!isOpen) return null;
 
   const [isRegister, setIsRegister] = useState(false);
   const [name, setName] = useState('');
+  const [username, setUsername] = useState('');
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
-  const [phone, setPhone] = useState('');
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState(null);
 
@@ -18,10 +19,10 @@ export default function AuthModal({ isOpen, onClose, onLoginSuccess }) {
     setError(null);
 
     const endpoint = isRegister ? '/api/auth/register' : '/api/auth/login';
-    const payload = isRegister ? { name, email, phone } : { email, password };
+    const payload = isRegister ? { name, username, email, password } : { email, password };
 
     try {
-      const res = await fetch(endpoint, {
+      const res = await apiFetch(endpoint, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify(payload),
@@ -29,32 +30,9 @@ export default function AuthModal({ isOpen, onClose, onLoginSuccess }) {
       const data = await res.json();
       if (!res.ok) throw new Error(data.message || 'Authentication failed');
 
+      localStorage.setItem('melvi_jwt', data.token);
       onLoginSuccess(data.user);
       onClose();
-    } catch (err) {
-      setError(err.message);
-    } finally {
-      setLoading(false);
-    }
-  };
-
-  const handleDemoLogin = async () => {
-    setLoading(true);
-    setError(null);
-
-    try {
-      const res = await fetch('/api/auth/login', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ identifier: 'admin', password: 'admin' }),
-      });
-      const data = await res.json();
-      if (res.ok && data.user) {
-        onLoginSuccess(data.user);
-        onClose();
-      } else {
-        throw new Error(data.message || 'Login failed');
-      }
     } catch (err) {
       setError(err.message);
     } finally {
@@ -92,34 +70,6 @@ export default function AuthModal({ isOpen, onClose, onLoginSuccess }) {
 
         <div className="p-6 space-y-6">
           
-          {/* Quick 1-Click Demo Login Shortcuts */}
-          <div className="bg-cocoa-900/60 p-3.5 rounded-2xl border border-gold-500/20 space-y-2">
-            <span className="text-[11px] font-bold uppercase tracking-wider text-gold-400 block text-center">
-              Quick 1-Click Sign-in
-            </span>
-            <div className="grid grid-cols-2 gap-2">
-              <button
-                type="button"
-                onClick={() => handleDemoLogin()}
-                className="p-2.5 rounded-xl bg-cocoa-950 border border-gold-500/40 hover:bg-gold-500/20 text-left transition-all group col-span-2"
-              >
-                <div className="flex items-center space-x-1.5 text-gold-300 text-xs font-bold">
-                  <ShieldCheck className="w-3.5 h-3.5" />
-                  <span>Admin Portal Login</span>
-                </div>
-                <p className="text-[10px] text-zinc-400 mt-0.5">Master Chocolatier</p>
-              </button>
-            </div>
-          </div>
-
-          <div className="relative flex items-center justify-center">
-            <div className="border-t border-zinc-800 w-full" />
-            <span className="bg-cocoa-950 px-3 text-[11px] uppercase tracking-widest text-zinc-500 shrink-0">
-              Or with email
-            </span>
-            <div className="border-t border-zinc-800 w-full" />
-          </div>
-
           {/* Form */}
           <form onSubmit={handleSubmit} className="space-y-4">
             {isRegister && (
@@ -131,6 +81,20 @@ export default function AuthModal({ isOpen, onClose, onLoginSuccess }) {
                   value={name}
                   onChange={(e) => setName(e.target.value)}
                   placeholder="e.g. Eleanor Vance"
+                  className="w-full bg-cocoa-900 border border-zinc-700 rounded-xl p-3 text-sm text-white focus:outline-none focus:ring-2 focus:ring-gold-400"
+                />
+              </div>
+            )}
+
+            {isRegister && (
+              <div>
+                <label className="block text-xs font-semibold text-gold-200 mb-1">Username</label>
+                <input
+                  type="text"
+                  required
+                  value={username}
+                  onChange={(e) => setUsername(e.target.value)}
+                  placeholder="Choose a username"
                   className="w-full bg-cocoa-900 border border-zinc-700 rounded-xl p-3 text-sm text-white focus:outline-none focus:ring-2 focus:ring-gold-400"
                 />
               </div>

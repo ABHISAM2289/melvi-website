@@ -1,4 +1,5 @@
 import React, { useState } from 'react';
+import { apiFetch } from '../lib/api';
 import { X, Trash2, Plus, Minus, ShoppingBag, ArrowRight, Sparkles, Tag, ShieldCheck } from 'lucide-react';
 
 export default function CartDrawer({
@@ -27,7 +28,7 @@ export default function CartDrawer({
     setCouponMessage('');
 
     try {
-      const res = await fetch('/api/catalog/coupons/validate', {
+      const res = await apiFetch('/api/catalog/coupons/validate', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ code: clean, subtotal }),

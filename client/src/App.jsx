@@ -1,4 +1,5 @@
 import React, { useState, useEffect } from 'react';
+import { apiFetch } from './lib/api';
 import AnimatedEntryLoginPage from './components/AnimatedEntryLoginPage';
 import PlatformAdminDashboard from './components/PlatformAdminDashboard';
 import BlinkitHeader from './components/BlinkitHeader';
@@ -68,8 +69,8 @@ export default function App() {
   const refreshProducts = async () => {
     try {
       const [prodRes, bannerRes] = await Promise.all([
-        fetch('/api/catalog/products').catch(() => null),
-        fetch('/api/catalog/banners').catch(() => null),
+        apiFetch('/api/catalog/products').catch(() => null),
+        apiFetch('/api/catalog/banners').catch(() => null),
       ]);
       if (prodRes && prodRes.ok) {
         const prodData = await prodRes.json().catch(() => ({}));

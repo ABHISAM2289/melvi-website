@@ -17,23 +17,16 @@ const common_1 = require("@nestjs/common");
 const database_service_1 = require("../database/database.service");
 const jwt = require("jsonwebtoken");
 const bcrypt = require("bcryptjs");
-const JWT_SECRET = process.env.JWT_SECRET || 'melvi_jwt_secret_key_2026_haute_chocolaterie_luxury';
 let AuthService = class AuthService {
     constructor(db) {
         this.db = db;
         this.inMemoryUsers = [];
         this.inMemoryAddresses = [];
-        const adminPassHash = bcrypt.hashSync('admin123', 10);
-        this.inMemoryUsers.push({
-            id: 'usr-admin-1',
-            name: 'Melvi Master Chocolatier',
-            username: 'admin',
-            email: 'admin@melvi.com',
-            password: adminPassHash,
-            role: 'admin',
-            phone: '+91 98765 43210',
-            avatar: '/images/melvi-official-logo.png',
-        });
+        const configuredSecret = process.env.JWT_SECRET;
+        if (process.env.NODE_ENV === 'production' && (!configuredSecret || configuredSecret.length < 32)) {
+            throw new Error('JWT_SECRET must be configured with at least 32 characters in production.');
+        }
+        this.jwtSecret = configuredSecret || 'local-development-only-jwt-secret';
     }
     generateToken(user) {
         return jwt.sign({
@@ -42,11 +35,11 @@ let AuthService = class AuthService {
             username: user.username,
             email: user.email,
             role: user.role,
-        }, JWT_SECRET, { expiresIn: '7d' });
+        }, this.jwtSecret, { expiresIn: '7d' });
     }
     verifyToken(token) {
         try {
-            return jwt.verify(token, JWT_SECRET);
+            return jwt.verify(token, this.jwtSecret);
         }
         catch {
             throw new common_1.UnauthorizedException('Session expired or invalid token. Please sign in again.');
@@ -61,7 +54,7 @@ let AuthService = class AuthService {
         if (!cleanUsername || cleanUsername.length < 3) {
             throw new common_1.BadRequestException('Username must be at least 3 characters (letters, numbers, underscores).');
         }
-        const assignedRole = data.role || (cleanEmail.includes('admin') || cleanUsername.includes('admin') ? 'admin' : 'customer');
+        const assignedRole = 'customer';
         const hashedPassword = await bcrypt.hash(data.password, 10);
         if (this.db.isConnected) {
             try {
@@ -146,9 +139,9 @@ let AuthService = class AuthService {
             }
         }
         if (expectedRole && foundUser.role !== expectedRole) {
-            if (expectedRole === 'admin') {
-                throw new common_1.UnauthorizedException('This account does not have platform administrator privileges.');
-            }
+            throw new common_1.UnauthorizedException(expectedRole === 'admin'
+                ? 'This account does not have platform administrator privileges.'
+                : 'Please sign in with a customer account.');
         }
         const { password: _, ...safeUser } = foundUser;
         const token = this.generateToken(safeUser);

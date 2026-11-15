@@ -1,4 +1,5 @@
 import React, { useState, useEffect } from 'react';
+import { apiFetch } from '../lib/api';
 import { ShieldCheck, Package, Truck, CheckCircle2, Clock, MapPin, RefreshCw, AlertCircle, Edit3, X } from 'lucide-react';
 
 export default function AdminTrackingManager({ onClose }) {
@@ -18,7 +19,7 @@ export default function AdminTrackingManager({ onClose }) {
   const fetchOrders = async () => {
     setLoading(true);
     try {
-      const res = await fetch('/api/orders');
+      const res = await apiFetch('/api/orders');
       const data = await res.json();
       setOrders(data.orders || []);
       if (data.orders?.length > 0 && !selectedOrder) {
@@ -52,7 +53,7 @@ export default function AdminTrackingManager({ onClose }) {
     setUpdateSuccess(false);
 
     try {
-      const res = await fetch(`/api/orders/${selectedOrder.id}/tracking`, {
+      const res = await apiFetch(`/api/orders/${selectedOrder.id}/tracking`, {
         method: 'PATCH',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({

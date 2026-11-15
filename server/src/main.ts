@@ -10,11 +10,18 @@ async function bootstrap() {
   app.use(express.json({ limit: '50mb' }));
   app.use(express.urlencoded({ limit: '50mb', extended: true }));
 
-  // Enable CORS for frontend Vite client
+  const configuredOrigins = process.env.CORS_ORIGINS
+    ?.split(',')
+    .map(origin => origin.trim())
+    .filter(Boolean);
+  if (process.env.NODE_ENV === 'production' && !configuredOrigins?.length) {
+    throw new Error('CORS_ORIGINS must contain the deployed frontend origin in production.');
+  }
+
   app.enableCors({
-    origin: '*',
+    origin: configuredOrigins?.length ? configuredOrigins : '*',
     methods: 'GET,HEAD,PUT,PATCH,POST,DELETE,OPTIONS',
-    credentials: true,
+    credentials: false,
   });
 
   // Set global API prefix

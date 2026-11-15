@@ -1,4 +1,5 @@
 import React, { useState, useEffect } from 'react';
+import { apiFetch } from '../lib/api';
 import { Package, Clock, Truck, ShieldCheck, Snowflake, ArrowRight, ArrowLeft, RefreshCw, ShoppingBag, CheckCircle2, ChevronRight, Filter } from 'lucide-react';
 
 export default function OrderHistoryPage({
@@ -18,7 +19,7 @@ export default function OrderHistoryPage({
     setLoading(true);
     try {
       const identifier = currentUser.email || currentUser.id || currentUser.username || '';
-      const res = await fetch(`/api/orders/history?identifier=${encodeURIComponent(identifier)}`);
+      const res = await apiFetch(`/api/orders/history?identifier=${encodeURIComponent(identifier)}`);
       const data = await res.json();
       setOrders(data.orders || []);
     } catch (err) {

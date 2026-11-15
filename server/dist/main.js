@@ -8,10 +8,17 @@ async function bootstrap() {
     const app = await core_1.NestFactory.create(app_module_1.AppModule);
     app.use(express.json({ limit: '50mb' }));
     app.use(express.urlencoded({ limit: '50mb', extended: true }));
+    const configuredOrigins = process.env.CORS_ORIGINS
+        ?.split(',')
+        .map(origin => origin.trim())
+        .filter(Boolean);
+    if (process.env.NODE_ENV === 'production' && !configuredOrigins?.length) {
+        throw new Error('CORS_ORIGINS must contain the deployed frontend origin in production.');
+    }
     app.enableCors({
-        origin: '*',
+        origin: configuredOrigins?.length ? configuredOrigins : '*',
         methods: 'GET,HEAD,PUT,PATCH,POST,DELETE,OPTIONS',
-        credentials: true,
+        credentials: false,
     });
     app.setGlobalPrefix('api');
     const PORT = process.env.PORT || 3001;

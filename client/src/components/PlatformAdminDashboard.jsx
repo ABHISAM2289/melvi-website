@@ -1,4 +1,5 @@
 import React, { useState, useEffect } from 'react';
+import { apiFetch } from '../lib/api';
 import { 
   ShieldCheck, Package, Plus, Trash2, Database, Upload, RefreshCw, 
   CheckCircle2, AlertCircle, Eye, LogOut, Truck, Cloud, Image, Sparkles,
@@ -69,10 +70,10 @@ export default function PlatformAdminDashboard({ onLogout, onSwitchToStore }) {
   const refreshData = async () => {
     try {
       const [prodRes, ordRes, banRes, coupRes] = await Promise.all([
-        fetch('/api/catalog/products').catch(() => null),
-        fetch('/api/orders').catch(() => null),
-        fetch('/api/catalog/banners?all=true').catch(() => null),
-        fetch('/api/catalog/coupons?all=true').catch(() => null),
+        apiFetch('/api/catalog/products').catch(() => null),
+        apiFetch('/api/orders').catch(() => null),
+        apiFetch('/api/catalog/banners?all=true').catch(() => null),
+        apiFetch('/api/catalog/coupons?all=true').catch(() => null),
       ]);
       if (prodRes && prodRes.ok) {
         const prodData = await prodRes.json().catch(() => ({}));
@@ -191,7 +192,7 @@ export default function PlatformAdminDashboard({ onLogout, onSwitchToStore }) {
     const nextStock = prod.inStock === false ? true : false;
     try {
       setErrorMessage('');
-      const res = await fetch(`/api/catalog/products/${prod.id}`, {
+      const res = await apiFetch(`/api/catalog/products/${prod.id}`, {
         method: 'PUT',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ inStock: nextStock }),
@@ -235,7 +236,7 @@ export default function PlatformAdminDashboard({ onLogout, onSwitchToStore }) {
       const url = isEdit ? `/api/catalog/products/${editingProductId}` : '/api/catalog/products';
       const method = isEdit ? 'PUT' : 'POST';
 
-      const res = await fetch(url, {
+      const res = await apiFetch(url, {
         method,
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify(payload),
@@ -273,7 +274,7 @@ export default function PlatformAdminDashboard({ onLogout, onSwitchToStore }) {
     if (!window.confirm(`Are you sure you want to remove "${prodName}" from the catalog?`)) return;
 
     try {
-      const res = await fetch(`/api/catalog/products/${id}`, { method: 'DELETE' });
+      const res = await apiFetch(`/api/catalog/products/${id}`, { method: 'DELETE' });
       const data = await res.json();
       if (data.success) {
         setSuccessMessage(`Removed "${prodName}" from catalog.`);
@@ -393,7 +394,7 @@ export default function PlatformAdminDashboard({ onLogout, onSwitchToStore }) {
       const url = isEdit ? `/api/catalog/banners/${editingBannerId}` : '/api/catalog/banners';
       const method = isEdit ? 'PUT' : 'POST';
 
-      const res = await fetch(url, {
+      const res = await apiFetch(url, {
         method,
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify(payload),
@@ -424,7 +425,7 @@ export default function PlatformAdminDashboard({ onLogout, onSwitchToStore }) {
     try {
       setErrorMessage('');
       const newActive = !b.isActive;
-      const res = await fetch(`/api/catalog/banners/${b.id}`, {
+      const res = await apiFetch(`/api/catalog/banners/${b.id}`, {
         method: 'PUT',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ isActive: newActive }),
@@ -446,7 +447,7 @@ export default function PlatformAdminDashboard({ onLogout, onSwitchToStore }) {
   const handleDeleteBanner = async (id, title) => {
     if (!window.confirm(`Are you sure you want to delete banner "${title}"?`)) return;
     try {
-      const res = await fetch(`/api/catalog/banners/${id}`, { method: 'DELETE' });
+      const res = await apiFetch(`/api/catalog/banners/${id}`, { method: 'DELETE' });
       const data = await res.json();
       if (data.success) {
         setSuccessMessage(`Banner "${title}" deleted.`);
@@ -513,7 +514,7 @@ export default function PlatformAdminDashboard({ onLogout, onSwitchToStore }) {
       const url = isEdit ? `/api/catalog/coupons/${editingCouponId}` : '/api/catalog/coupons';
       const method = isEdit ? 'PUT' : 'POST';
 
-      const res = await fetch(url, {
+      const res = await apiFetch(url, {
         method,
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify(payload),
@@ -544,7 +545,7 @@ export default function PlatformAdminDashboard({ onLogout, onSwitchToStore }) {
     try {
       setErrorMessage('');
       const newActive = !c.isActive;
-      const res = await fetch(`/api/catalog/coupons/${c.id}`, {
+      const res = await apiFetch(`/api/catalog/coupons/${c.id}`, {
         method: 'PUT',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ isActive: newActive }),
@@ -566,7 +567,7 @@ export default function PlatformAdminDashboard({ onLogout, onSwitchToStore }) {
   const handleDeleteCoupon = async (id, code) => {
     if (!window.confirm(`Are you sure you want to delete promo code "${code}"?`)) return;
     try {
-      const res = await fetch(`/api/catalog/coupons/${id}`, { method: 'DELETE' });
+      const res = await apiFetch(`/api/catalog/coupons/${id}`, { method: 'DELETE' });
       const data = await res.json();
       if (data.success) {
         setSuccessMessage(`Promo code "${code}" deleted.`);
@@ -601,7 +602,7 @@ export default function PlatformAdminDashboard({ onLogout, onSwitchToStore }) {
       };
 
       const targetOrder = orders.find(o => o.id === orderId) || selectedOrder;
-      const res = await fetch(`/api/orders/${orderId}/tracking`, {
+      const res = await apiFetch(`/api/orders/${orderId}/tracking`, {
         method: 'PATCH',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
@@ -634,7 +635,7 @@ export default function PlatformAdminDashboard({ onLogout, onSwitchToStore }) {
     try {
       setErrorMessage('');
       const targetOrder = orders.find((o) => o.id === orderId) || selectedOrder;
-      const res = await fetch(`/api/orders/${orderId}/tracking`, {
+      const res = await apiFetch(`/api/orders/${orderId}/tracking`, {
         method: 'PATCH',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
@@ -670,7 +671,7 @@ export default function PlatformAdminDashboard({ onLogout, onSwitchToStore }) {
     setErrorMessage('');
 
     try {
-      const res = await fetch(`/api/orders/${selectedOrder.id}/tracking`, {
+      const res = await apiFetch(`/api/orders/${selectedOrder.id}/tracking`, {
         method: 'PATCH',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({

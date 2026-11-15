@@ -1,4 +1,5 @@
 import React, { useState } from 'react';
+import { apiFetch } from '../lib/api';
 import { Sparkles, ShieldCheck, User, ArrowRight, Lock, Mail, Snowflake, Phone, AlertCircle, CheckCircle2, AtSign } from 'lucide-react';
 import ChocolateCanvasAnimation from './ChocolateCanvasAnimation';
 
@@ -23,11 +24,11 @@ export default function AnimatedEntryLoginPage({ onCustomerLogin, onAdminLogin, 
 
     const endpoint = isRegister ? '/api/auth/register' : '/api/auth/login';
     const payload = isRegister
-      ? { name, username, email, password, phone, role: authRole }
+      ? { name, username, email, password, phone }
       : { identifier, password, role: authRole };
 
     try {
-      const res = await fetch(endpoint, {
+      const res = await apiFetch(endpoint, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify(payload),
@@ -51,7 +52,7 @@ export default function AnimatedEntryLoginPage({ onCustomerLogin, onAdminLogin, 
       setSuccess(isRegister ? 'Account registered successfully! Entering Melvi...' : 'Signed in successfully! Entering Melvi...');
 
       setTimeout(() => {
-        if (authRole === 'admin' || data.user.role === 'admin') {
+        if (data.user.role === 'admin') {
           onAdminLogin(data.user);
         } else {
           onCustomerLogin(data.user);
@@ -117,7 +118,9 @@ export default function AnimatedEntryLoginPage({ onCustomerLogin, onAdminLogin, 
               <p className="text-xs text-[#7d7065] font-light mt-0.5">
                 {isRegister
                   ? 'Register with your username, email, and password to start.'
-                  : 'Sign in with your email or username to access your account.'}
+                  : authRole === 'admin'
+                    ? 'Sign in with the administrator account configured for this deployment.'
+                    : 'Sign in with your email or username to access your account.'}
               </p>
             </div>
           </div>
@@ -145,6 +148,7 @@ export default function AnimatedEntryLoginPage({ onCustomerLogin, onAdminLogin, 
               type="button"
               onClick={() => {
                 setAuthRole('admin');
+                setIsRegister(false);
                 setError(null);
                 setSuccess(null);
               }}
@@ -324,22 +328,23 @@ export default function AnimatedEntryLoginPage({ onCustomerLogin, onAdminLogin, 
             </button>
           </form>
 
-          {/* Register vs Sign in Toggle */}
-          <div className="text-center pt-2 border-t border-[#f0ebd9]">
-            <button
-              type="button"
-              onClick={() => {
-                setIsRegister(!isRegister);
-                setError(null);
-                setSuccess(null);
-              }}
-              className="text-xs text-[#7c5119] hover:underline font-bold"
-            >
-              {isRegister
-                ? 'Already have an account? Sign In with Email/Username'
-                : "New here? Register with Username & Password"}
-            </button>
-          </div>
+          {authRole === 'customer' && (
+            <div className="text-center pt-2 border-t border-[#f0ebd9]">
+              <button
+                type="button"
+                onClick={() => {
+                  setIsRegister(!isRegister);
+                  setError(null);
+                  setSuccess(null);
+                }}
+                className="text-xs text-[#7c5119] hover:underline font-bold"
+              >
+                {isRegister
+                  ? 'Already have an account? Sign In with Email/Username'
+                  : "New here? Register with Username & Password"}
+              </button>
+            </div>
+          )}
 
         </div>
 

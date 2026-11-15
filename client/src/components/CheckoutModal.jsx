@@ -1,4 +1,5 @@
 import React, { useState, useEffect } from 'react';
+import { apiFetch } from '../lib/api';
 import { 
   X, ShieldCheck, CreditCard, QrCode, Building, Banknote, CheckCircle2, 
   Lock, ArrowRight, Snowflake, Sparkles, MapPin, Home, Briefcase, 
@@ -60,7 +61,7 @@ export default function CheckoutModal({
     if (!currentUser?.id) return;
     try {
       setLoadingAddresses(true);
-      const res = await fetch(`/api/auth/addresses?userId=${encodeURIComponent(currentUser.id)}`);
+      const res = await apiFetch(`/api/auth/addresses?userId=${encodeURIComponent(currentUser.id)}`);
       const data = await res.json();
       const list = data.addresses || [];
       setSavedAddresses(list);
@@ -114,7 +115,7 @@ export default function CheckoutModal({
     setIsSavingAddress(true);
     try {
       if (currentUser?.id && saveNewAddress) {
-        const res = await fetch('/api/auth/addresses', {
+        const res = await apiFetch('/api/auth/addresses', {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
           body: JSON.stringify({
@@ -172,7 +173,7 @@ export default function CheckoutModal({
 
     // Optionally update user profile with latest contact details
     if (currentUser?.id && saveContactToProfile) {
-      fetch('/api/auth/profile', {
+      apiFetch('/api/auth/profile', {
         method: 'PUT',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
@@ -192,7 +193,7 @@ export default function CheckoutModal({
 
     try {
       // 1. Create Payment Intent via NestJS API
-      const intentRes = await fetch('/api/payment/create-intent', {
+      const intentRes = await apiFetch('/api/payment/create-intent', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ amount: total, currency: 'INR' }),
@@ -200,7 +201,7 @@ export default function CheckoutModal({
       const intentData = await intentRes.json();
 
       // 2. Simulate Payment Verification
-      const verifyRes = await fetch('/api/payment/verify', {
+      const verifyRes = await apiFetch('/api/payment/verify', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
@@ -212,7 +213,7 @@ export default function CheckoutModal({
       const verifyData = await verifyRes.json();
 
       // 3. Place Order in NestJS Orders API
-      const orderRes = await fetch('/api/orders', {
+      const orderRes = await apiFetch('/api/orders', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({

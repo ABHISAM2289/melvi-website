@@ -1,4 +1,5 @@
 import React, { useState, useEffect } from 'react';
+import { apiFetch } from '../lib/api';
 import { 
   User, MapPin, Plus, Check, Trash2, Pencil, ShieldCheck, 
   Home, Briefcase, Tag, Phone, Mail, CheckCircle2, AlertCircle, 
@@ -46,7 +47,7 @@ export default function CustomerProfilePage({
     if (!currentUser?.id) return;
     try {
       setLoadingAddresses(true);
-      const res = await fetch(`/api/auth/addresses?userId=${encodeURIComponent(currentUser.id)}`);
+      const res = await apiFetch(`/api/auth/addresses?userId=${encodeURIComponent(currentUser.id)}`);
       const data = await res.json();
       setAddresses(data.addresses || []);
     } catch (err) {
@@ -72,7 +73,7 @@ export default function CustomerProfilePage({
     setErrorMessage('');
 
     try {
-      const res = await fetch('/api/auth/profile', {
+      const res = await apiFetch('/api/auth/profile', {
         method: 'PUT',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
@@ -156,7 +157,7 @@ export default function CustomerProfilePage({
         : '/api/auth/addresses';
       const method = editingAddressId ? 'PUT' : 'POST';
 
-      const res = await fetch(url, {
+      const res = await apiFetch(url, {
         method,
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify(payload),
@@ -180,7 +181,7 @@ export default function CustomerProfilePage({
   // Handle Set Default Address
   const handleSetDefault = async (addrId) => {
     try {
-      const res = await fetch(`/api/auth/addresses/${addrId}`, {
+      const res = await apiFetch(`/api/auth/addresses/${addrId}`, {
         method: 'PUT',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
@@ -202,7 +203,7 @@ export default function CustomerProfilePage({
   const handleDeleteAddress = async (addrId) => {
     if (!confirm('Are you sure you want to remove this delivery address?')) return;
     try {
-      const res = await fetch(`/api/auth/addresses/${addrId}?userId=${encodeURIComponent(currentUser.id)}`, {
+      const res = await apiFetch(`/api/auth/addresses/${addrId}?userId=${encodeURIComponent(currentUser.id)}`, {
         method: 'DELETE',
       });
 

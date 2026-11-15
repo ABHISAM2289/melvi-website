@@ -1,4 +1,5 @@
 import React, { useState, useEffect } from 'react';
+import { apiFetch } from '../lib/api';
 import { Search, Package, Snowflake, CheckCircle2, Clock, Truck, ShieldCheck, MapPin, AlertCircle, Sparkles } from 'lucide-react';
 
 export default function OrderTracking({ initialTrackingNumber = 'MLV-8821-E' }) {
@@ -13,7 +14,7 @@ export default function OrderTracking({ initialTrackingNumber = 'MLV-8821-E' }) 
     setError(null);
 
     try {
-      const res = await fetch(`/api/orders/track/${encodeURIComponent(code.trim())}`);
+      const res = await apiFetch(`/api/orders/track/${encodeURIComponent(code.trim())}`);
       const data = await res.json();
       if (!res.ok) {
         throw new Error(data.message || 'Tracking number not found');

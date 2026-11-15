@@ -13,19 +13,31 @@ Object.defineProperty(exports, "__esModule", { value: true });
 exports.DatabaseService = void 0;
 const common_1 = require("@nestjs/common");
 const pg_1 = require("pg");
+const bcrypt = require("bcryptjs");
 let DatabaseService = DatabaseService_1 = class DatabaseService {
     constructor() {
         this.logger = new common_1.Logger(DatabaseService_1.name);
         this.isConnected = false;
-        this.pool = new pg_1.Pool({
-            host: process.env.DB_HOST || 'localhost',
-            port: parseInt(process.env.DB_PORT || '5434', 10),
-            user: process.env.DB_USER || 'melvi_user',
-            password: process.env.DB_PASSWORD || 'melvipassword123',
-            database: process.env.DB_NAME || 'melvi_db',
-            max: 10,
-            idleTimeoutMillis: 30000,
-        });
+        const connectionString = process.env.DATABASE_URL;
+        if (process.env.NODE_ENV === 'production' && !connectionString) {
+            throw new Error('DATABASE_URL must be configured in production.');
+        }
+        this.pool = new pg_1.Pool(connectionString
+            ? {
+                connectionString,
+                ssl: process.env.DB_SSL === 'true' ? true : undefined,
+                max: 10,
+                idleTimeoutMillis: 30000,
+            }
+            : {
+                host: process.env.DB_HOST || 'localhost',
+                port: parseInt(process.env.DB_PORT || '5434', 10),
+                user: process.env.DB_USER || 'melvi_user',
+                password: process.env.DB_PASSWORD || 'melvipassword123',
+                database: process.env.DB_NAME || 'melvi_db',
+                max: 10,
+                idleTimeoutMillis: 30000,
+            });
     }
     async onModuleInit() {
         try {
@@ -38,7 +50,11 @@ let DatabaseService = DatabaseService_1 = class DatabaseService {
         }
         catch (err) {
             this.isConnected = false;
-            this.logger.warn(` PostgreSQL connection note: ${err.message}. Using resilient hybrid storage.`);
+            this.logger.error(`PostgreSQL connection failed: ${err.message}`);
+            if (process.env.NODE_ENV === 'production') {
+                throw err;
+            }
+            this.logger.warn('Continuing with in-memory storage for local development.');
         }
     }
     async onModuleDestroy() {
@@ -189,17 +205,185 @@ let DatabaseService = DatabaseService_1 = class DatabaseService {
     async seedInitialData() {
         if (!this.isConnected)
             return;
-        try {
-            await this.pool.query(`
-        INSERT INTO users (id, name, username, email, password, role, phone, avatar) VALUES 
-        ('usr-admin-1', 'Melvi Head Chocolatier (Admin)', 'admin', 'admin@melvi.com', '$2b$10$oX1Q0V47c.s2L7L.rM1aVuqf0GzT7m9q0w3lq1q0w3lq1q0w3lq1q', 'admin', '+91 98765 43210', '/images/melvi-official-logo.png')
-        ON CONFLICT (email) DO UPDATE SET role = 'admin', username = 'admin';
-      `);
-            this.logger.log(' Verified Platform Admin account in PostgreSQL');
+        const products = [
+            {
+                id: 'prod-melvi-01',
+                name: 'Signature Bonbon Box',
+                tagline: 'A jeweled selection of handcrafted ganaches',
+                price: 1299,
+                originalPrice: 1599,
+                rating: 4.9,
+                reviewsCount: 124,
+                category: 'chocolate-bites',
+                image: '/images/chocolates/choco-1.jpg',
+                description: 'A curated box of handcrafted chocolate bonbons.',
+                badge: 'Bestseller',
+                cocoaPercentage: 70,
+                tags: ['Handcrafted', 'Gift'],
+                isFeatured: true,
+            },
+            {
+                id: 'prod-melvi-02',
+                name: 'Hazelnut Praline Bar',
+                tagline: 'Silky praline wrapped in rich dark chocolate',
+                price: 499,
+                originalPrice: 599,
+                rating: 4.8,
+                reviewsCount: 86,
+                category: 'chocolate-bars',
+                image: '/images/chocolates/choco-2.jpg',
+                description: 'A crisp, buttery hazelnut praline chocolate bar.',
+                badge: 'Customer Favorite',
+                cocoaPercentage: 65,
+                tags: ['Hazelnut', 'Dark chocolate'],
+                isFeatured: true,
+            },
+            {
+                id: 'prod-melvi-03',
+                name: 'Cocoa Truffle Selection',
+                tagline: 'Velvety truffles finished by hand',
+                price: 899,
+                originalPrice: null,
+                rating: 4.9,
+                reviewsCount: 73,
+                category: 'surprise',
+                image: '/images/chocolates/choco-3.jpg',
+                description: 'An assortment of smooth cocoa-dusted chocolate truffles.',
+                badge: 'Artisan Made',
+                cocoaPercentage: 72,
+                tags: ['Truffles', 'Gift'],
+                isFeatured: true,
+            },
+            {
+                id: 'prod-melvi-04',
+                name: 'Pistachio Velvet Bar',
+                tagline: 'Roasted pistachio with a delicate cocoa finish',
+                price: 549,
+                originalPrice: null,
+                rating: 4.8,
+                reviewsCount: 51,
+                category: 'chocolate-bars',
+                image: '/images/chocolates/choco-4.jpg',
+                description: 'A rich chocolate bar with roasted pistachio pieces.',
+                badge: 'Limited Batch',
+                cocoaPercentage: 60,
+                tags: ['Pistachio', 'Limited'],
+                isFeatured: true,
+            },
+            {
+                id: 'prod-melvi-05',
+                name: 'Seasonal Praline Collection',
+                tagline: 'A limited-edition assortment for the season',
+                price: 1499,
+                originalPrice: null,
+                rating: 5,
+                reviewsCount: 39,
+                category: 'limited-editions',
+                image: '/images/chocolates/choco-5.jpg',
+                description: 'A seasonal selection of small-batch pralines.',
+                badge: 'Limited Edition',
+                cocoaPercentage: 68,
+                tags: ['Seasonal', 'Small batch'],
+                isFeatured: true,
+            },
+        ];
+        for (const product of products) {
+            await this.pool.query(`INSERT INTO catalog_products (
+          id, name, tagline, price, original_price, rating, reviews_count, category,
+          image, description, badge, cocoa_percentage, tags, is_featured, in_stock
+        ) VALUES ($1,$2,$3,$4,$5,$6,$7,$8,$9,$10,$11,$12,$13,$14,true)
+        ON CONFLICT (id) DO NOTHING`, [
+                product.id,
+                product.name,
+                product.tagline,
+                product.price,
+                product.originalPrice,
+                product.rating,
+                product.reviewsCount,
+                product.category,
+                product.image,
+                product.description,
+                product.badge,
+                product.cocoaPercentage,
+                product.tags,
+                product.isFeatured,
+            ]);
         }
-        catch (err) {
-            this.logger.warn(` Admin seed notice: ${err.message}`);
+        const banners = [
+            {
+                id: 'banner-1',
+                title: 'Build a Box to Remember',
+                highlight: 'Personalized gifting',
+                subtitle: 'Choose your chocolates and add a thoughtful note.',
+                ctaText: 'Create Your Box',
+                code: 'CUSTOM',
+                bgGradient: 'from-amber-500 to-amber-600',
+                image: '/images/poster-custom-box.svg',
+                linkType: 'custom_box',
+            },
+            {
+                id: 'banner-2',
+                title: 'A Little Luxury, Delivered',
+                highlight: 'Made for sharing',
+                subtitle: 'Discover handcrafted chocolates for every occasion.',
+                ctaText: 'Explore Collection',
+                code: 'MELVI',
+                bgGradient: 'from-rose-900 to-amber-950',
+                image: '/images/poster-royal-discount.svg',
+                linkType: 'store',
+            },
+            {
+                id: 'banner-3',
+                title: 'Thoughtful from Atelier to Door',
+                highlight: 'Carefully packed',
+                subtitle: 'Follow your order from our atelier to your door.',
+                ctaText: 'Track Order',
+                code: 'COLDPACK',
+                bgGradient: 'from-cyan-900 to-blue-950',
+                image: '/images/poster-cold-chain.svg',
+                linkType: 'tracking',
+            },
+        ];
+        for (const banner of banners) {
+            await this.pool.query(`INSERT INTO promo_banners (
+          id, title, highlight, subtitle, cta_text, code, bg_gradient, image, link_type, is_active
+        ) VALUES ($1,$2,$3,$4,$5,$6,$7,$8,$9,true)
+        ON CONFLICT (id) DO NOTHING`, [
+                banner.id,
+                banner.title,
+                banner.highlight,
+                banner.subtitle,
+                banner.ctaText,
+                banner.code,
+                banner.bgGradient,
+                banner.image,
+                banner.linkType,
+            ]);
         }
+        const email = process.env.ADMIN_EMAIL?.trim().toLowerCase();
+        const password = process.env.ADMIN_PASSWORD;
+        if (!email || !password || password.length < 16) {
+            await this.pool.query(`UPDATE users SET role = 'customer' WHERE role = 'admin'`);
+            if (process.env.NODE_ENV === 'production') {
+                throw new Error('Set ADMIN_EMAIL and an ADMIN_PASSWORD of at least 16 characters in production.');
+            }
+            this.logger.warn('No admin account provisioned; set ADMIN_EMAIL and a 16+ character ADMIN_PASSWORD.');
+            return;
+        }
+        const username = (process.env.ADMIN_USERNAME || 'admin')
+            .trim()
+            .toLowerCase()
+            .replace(/[^a-z0-9_]/g, '');
+        if (username.length < 3) {
+            throw new Error('ADMIN_USERNAME must contain at least 3 letters, numbers, or underscores.');
+        }
+        const passwordHash = await bcrypt.hash(password, 10);
+        await this.pool.query(`UPDATE users SET role = 'customer' WHERE role = 'admin' AND LOWER(email) <> $1`, [email]);
+        await this.pool.query(`INSERT INTO users (id, name, username, email, password, role, phone, avatar)
+       VALUES ($1, 'Melvi Platform Administrator', $2, $3, $4, 'admin', '', '/images/melvi-official-logo.png')
+       ON CONFLICT (email) DO UPDATE
+       SET username = EXCLUDED.username, password = EXCLUDED.password, role = 'admin'`, [`usr-admin-${Buffer.from(email).toString('hex')}`, username, email, passwordHash]);
+        this.logger.log('Provisioned the configured platform administrator.');
     }
 };
 exports.DatabaseService = DatabaseService;

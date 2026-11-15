@@ -26,6 +26,7 @@ export declare class AuthService {
     private readonly db;
     private inMemoryUsers;
     private inMemoryAddresses;
+    private readonly jwtSecret;
     constructor(db: DatabaseService);
     generateToken(user: Omit<User, 'password'>): string;
     verifyToken(token: string): any;
