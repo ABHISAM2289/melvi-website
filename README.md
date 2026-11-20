@@ -69,6 +69,12 @@ npm start
 * **API Root:** `http://127.0.0.1:3001/api`
 * The database provisions the admin account from `ADMIN_EMAIL` and `ADMIN_PASSWORD` (minimum 16 characters). Set these in the terminal before starting the server; registration only creates customer accounts.
 
+To run the backend against the linked Neon project instead of local Docker PostgreSQL, run this from the repository root:
+```bash
+npm run dev:server:neon
+```
+This loads the Neon connection variables for the linked project without printing them. The `.env.local` file is ignored by Git and must never be committed.
+
 ### 3. Frontend (React + Vite)
 ```bash
 cd client
@@ -94,7 +100,7 @@ The `client/vercel.json` file keeps the `/admin` and `/store` client-side routes
 
 ### API and database
 
-Deploy `server` as a Node.js service and attach a persistent PostgreSQL database. Configure the variables listed in [`server/.env.example`](./server/.env.example) in the hosting provider; do not use the local Docker credentials from `docker-compose.yml` in a hosted environment.
+Deploy `server` as a Node.js service and configure the required variables listed in [`server/.env.example`](./server/.env.example) in the hosting provider. Copy the `DATABASE_URL` value from your private Neon project environment into the backend host's secret environment settings; do not commit it or use the local Docker credentials from `docker-compose.yml` in a hosted environment. `neon-env run` is for local development and does not configure environment variables in a separate hosting provider.
 
 - Set `DATABASE_URL` to the managed database connection string and `DB_SSL=true` only when the database provider requires TLS.
 - Set `JWT_SECRET` to a unique random value of at least 32 characters.

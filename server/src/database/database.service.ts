@@ -369,10 +369,13 @@ export class DatabaseService implements OnModuleInit, OnModuleDestroy {
     const email = process.env.ADMIN_EMAIL?.trim().toLowerCase();
     const password = process.env.ADMIN_PASSWORD;
     if (!email || !password || password.length < 16) {
-      await this.pool.query(`UPDATE users SET role = 'customer' WHERE role = 'admin'`);
       if (process.env.NODE_ENV === 'production') {
         throw new Error('Set ADMIN_EMAIL and an ADMIN_PASSWORD of at least 16 characters in production.');
       }
+      await this.pool.query(
+        `UPDATE users SET role = 'customer'
+         WHERE id = 'usr-admin-1' AND email = 'admin@melvi.com'`
+      );
       this.logger.warn('No admin account provisioned; set ADMIN_EMAIL and a 16+ character ADMIN_PASSWORD.');
       return;
     }
