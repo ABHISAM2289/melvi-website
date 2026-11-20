@@ -35,7 +35,7 @@ let DatabaseService = DatabaseService_1 = class DatabaseService {
             }
             : {
                 host: dbHost || 'localhost',
-                port: parseInt(process.env.DB_PORT || '5434', 10),
+                port: parseInt(process.env.DB_PORT || (cloudSqlSocket ? '5432' : '5434'), 10),
                 user: process.env.DB_USER || 'melvi_user',
                 password: process.env.DB_PASSWORD || 'melvipassword123',
                 database: process.env.DB_NAME || 'melvi_db',
