@@ -10,8 +10,13 @@ export class DatabaseService implements OnModuleInit, OnModuleDestroy {
 
   constructor() {
     const connectionString = process.env.DATABASE_URL;
-    if (process.env.NODE_ENV === 'production' && !connectionString) {
-      throw new Error('DATABASE_URL must be configured in production.');
+    const cloudSqlSocket = process.env.INSTANCE_CONNECTION_NAME
+      ? `/cloudsql/${process.env.INSTANCE_CONNECTION_NAME}`
+      : undefined;
+    const dbHost = process.env.DB_HOST || cloudSqlSocket;
+
+    if (process.env.NODE_ENV === 'production' && !connectionString && !dbHost) {
+      throw new Error('DATABASE_URL or DB_HOST/INSTANCE_CONNECTION_NAME must be configured in production.');
     }
 
     this.pool = new Pool(connectionString
@@ -22,7 +27,7 @@ export class DatabaseService implements OnModuleInit, OnModuleDestroy {
           idleTimeoutMillis: 30000,
         }
       : {
-          host: process.env.DB_HOST || 'localhost',
+          host: dbHost || 'localhost',
           port: parseInt(process.env.DB_PORT || '5434', 10),
           user: process.env.DB_USER || 'melvi_user',
           password: process.env.DB_PASSWORD || 'melvipassword123',

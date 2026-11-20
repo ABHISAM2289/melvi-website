@@ -1,0 +1,111 @@
+name: Deploy to Google Cloud Run (dev)
+
+on:
+  push:
+    branches:
+      - dev
+  workflow_dispatch:
+
+env:
+  GCP_PROJECT_ID: project-976e1d4c-e4b0-4cf3-bcf
+  GCP_REGION: asia-south1
+  SERVICE_NAME: melvi-website
+  SQL_INSTANCE_NAME: melvi-pg-micro
+  DB_NAME: melvi_db
+  DB_USER: melvi_user
+  ARTIFACT_REPO: melvi-repo
+
+jobs:
+  build-and-deploy:
+    name: Build & Auto-Deploy to Cloud Run
+    runs-on: ubuntu-latest
+
+    permissions:
+      contents: read
+      id-token: write
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Setup Node.js 22
+        uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+
+      - name: Verify Frontend & Backend Builds
+        run: |
+          cd client && npm ci && npm run build
+          cd ../server && npm ci && npm run build
+
+      - name: Authenticate to Google Cloud
+        uses: google-github-actions/auth@v2
+        with:
+          credentials_json: ${{ secrets.GCP_SA_KEY }}
+
+      - name: Set up Cloud SDK
+        uses: google-github-actions/setup-gcloud@v2
+        with:
+          project_id: ${{ env.GCP_PROJECT_ID }}
+
+      - name: Enable Required GCP APIs & Ensure Lowest-Cost Cloud SQL Instance
+        run: |
+          gcloud services enable \
+            run.googleapis.com \
+            sqladmin.googleapis.com \
+            cloudbuild.googleapis.com \
+            artifactregistry.googleapis.com
+
+          # Ensure Artifact Registry repository exists
+          if ! gcloud artifacts repositories describe "$ARTIFACT_REPO" --location="$GCP_REGION" >/dev/null 2>&1; then
+            gcloud artifacts repositories create "$ARTIFACT_REPO" \
+              --repository-format=docker \
+              --location="$GCP_REGION" \
+              --description="Melvi Docker Repository"
+          fi
+
+          # Ensure lowest-cost Cloud SQL PostgreSQL (db-f1-micro, 10GB HDD, Zonal) exists
+          if ! gcloud sql instances describe "$SQL_INSTANCE_NAME" >/dev/null 2>&1; then
+            gcloud sql instances create "$SQL_INSTANCE_NAME" \
+              --database-version=POSTGRES_17 \
+              --tier=db-f1-micro \
+              --region="$GCP_REGION" \
+              --storage-type=HDD \
+              --storage-size=10GB \
+              --availability-type=ZONAL \
+              --no-backup
+          fi
+
+          # Ensure database and user exist
+          if ! gcloud sql databases describe "$DB_NAME" --instance="$SQL_INSTANCE_NAME" >/dev/null 2>&1; then
+            gcloud sql databases create "$DB_NAME" --instance="$SQL_INSTANCE_NAME"
+          fi
+
+          if ! gcloud sql users list --instance="$SQL_INSTANCE_NAME" --filter="name=$DB_USER" --format="value(name)" | grep -q "^${DB_USER}$"; then
+            gcloud sql users create "$DB_USER" --instance="$SQL_INSTANCE_NAME" --password="${{ secrets.DB_PASSWORD }}"
+          elif [ -n "${{ secrets.DB_PASSWORD }}" ]; then
+            gcloud sql users set-password "$DB_USER" --instance="$SQL_INSTANCE_NAME" --password="${{ secrets.DB_PASSWORD }}"
+          fi
+
+      - name: Build and Push Image via Cloud Build
+        run: |
+          IMAGE_URI="${GCP_REGION}-docker.pkg.dev/${GCP_PROJECT_ID}/${ARTIFACT_REPO}/${SERVICE_NAME}:${GITHUB_SHA}"
+          gcloud builds submit --tag "$IMAGE_URI" .
+
+      - name: Deploy Unified Container to Cloud Run
+        run: |
+          IMAGE_URI="${GCP_REGION}-docker.pkg.dev/${GCP_PROJECT_ID}/${ARTIFACT_REPO}/${SERVICE_NAME}:${GITHUB_SHA}"
+          INSTANCE_CONN="${GCP_PROJECT_ID}:${GCP_REGION}:${SQL_INSTANCE_NAME}"
+
+          gcloud run deploy "$SERVICE_NAME" \
+            --image "$IMAGE_URI" \
+            --region "$GCP_REGION" \
+            --platform managed \
+            --allow-unauthenticated \
+            --min-instances 0 \
+            --max-instances 2 \
+            --memory 512Mi \
+            --cpu 1 \
+            --cpu-throttling \
+            --add-cloudsql-instances "$INSTANCE_CONN" \
+            --set-env-vars "NODE_ENV=production,INSTANCE_CONNECTION_NAME=${INSTANCE_CONN},DB_USER=${DB_USER},DB_PASSWORD=${{ secrets.DB_PASSWORD }},DB_NAME=${DB_NAME},DB_SSL=false,JWT_SECRET=${{ secrets.JWT_SECRET }},ADMIN_EMAIL=${{ secrets.ADMIN_EMAIL || 'admin@melvi.com' }},ADMIN_USERNAME=admin,ADMIN_PASSWORD=${{ secrets.ADMIN_PASSWORD }}"

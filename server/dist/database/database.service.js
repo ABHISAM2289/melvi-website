@@ -19,8 +19,12 @@ let DatabaseService = DatabaseService_1 = class DatabaseService {
         this.logger = new common_1.Logger(DatabaseService_1.name);
         this.isConnected = false;
         const connectionString = process.env.DATABASE_URL;
-        if (process.env.NODE_ENV === 'production' && !connectionString) {
-            throw new Error('DATABASE_URL must be configured in production.');
+        const cloudSqlSocket = process.env.INSTANCE_CONNECTION_NAME
+            ? `/cloudsql/${process.env.INSTANCE_CONNECTION_NAME}`
+            : undefined;
+        const dbHost = process.env.DB_HOST || cloudSqlSocket;
+        if (process.env.NODE_ENV === 'production' && !connectionString && !dbHost) {
+            throw new Error('DATABASE_URL or DB_HOST/INSTANCE_CONNECTION_NAME must be configured in production.');
         }
         this.pool = new pg_1.Pool(connectionString
             ? {
@@ -30,7 +34,7 @@ let DatabaseService = DatabaseService_1 = class DatabaseService {
                 idleTimeoutMillis: 30000,
             }
             : {
-                host: process.env.DB_HOST || 'localhost',
+                host: dbHost || 'localhost',
                 port: parseInt(process.env.DB_PORT || '5434', 10),
                 user: process.env.DB_USER || 'melvi_user',
                 password: process.env.DB_PASSWORD || 'melvipassword123',
@@ -363,10 +367,11 @@ let DatabaseService = DatabaseService_1 = class DatabaseService {
         const email = process.env.ADMIN_EMAIL?.trim().toLowerCase();
         const password = process.env.ADMIN_PASSWORD;
         if (!email || !password || password.length < 16) {
-            await this.pool.query(`UPDATE users SET role = 'customer' WHERE role = 'admin'`);
             if (process.env.NODE_ENV === 'production') {
                 throw new Error('Set ADMIN_EMAIL and an ADMIN_PASSWORD of at least 16 characters in production.');
             }
+            await this.pool.query(`UPDATE users SET role = 'customer'
+         WHERE id = 'usr-admin-1' AND email = 'admin@melvi.com'`);
             this.logger.warn('No admin account provisioned; set ADMIN_EMAIL and a 16+ character ADMIN_PASSWORD.');
             return;
         }
