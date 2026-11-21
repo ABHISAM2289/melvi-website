@@ -48,7 +48,7 @@ export default function App() {
   const [isCartOpen, setIsCartOpen] = useState(false);
   const [isCheckoutOpen, setIsCheckoutOpen] = useState(false);
   const [isProfileOpen, setIsProfileOpen] = useState(false);
-  const [activeTrackingCode, setActiveTrackingCode] = useState('MLV-8821-E');
+  const [activeTrackingCode, setActiveTrackingCode] = useState('');
 
   // Save cart
   useEffect(() => {

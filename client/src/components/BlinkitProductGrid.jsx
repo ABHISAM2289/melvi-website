@@ -47,6 +47,12 @@ export default function BlinkitProductGrid({
       </div>
 
       {/* Grid of Product Cards */}
+      {filtered.length === 0 ? (
+        <div className="bg-white rounded-3xl p-10 border border-zinc-200/80 text-center my-2">
+          <p className="font-serif font-bold text-base text-zinc-800">No confections available in this category yet</p>
+          <p className="text-xs text-zinc-500 mt-1">New handcrafted batches will appear here once added from the Platform Admin catalog.</p>
+        </div>
+      ) : (
       <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 gap-3 sm:gap-4 mt-2">
         {filtered.map(product => {
           const qty = getCartQuantity(product.id);
@@ -166,6 +172,7 @@ export default function BlinkitProductGrid({
           );
         })}
       </div>
+      )}
 
     </section>
   );

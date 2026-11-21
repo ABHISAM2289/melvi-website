@@ -119,24 +119,6 @@ export class DatabaseService implements OnModuleInit, OnModuleDestroy {
       ALTER TABLE promo_banners ADD COLUMN IF NOT EXISTS image TEXT;
       ALTER TABLE promo_banners ADD COLUMN IF NOT EXISTS link_type VARCHAR(64);
 
-      -- Ensure existing banners have valid high-contrast gradients and images
-      UPDATE promo_banners 
-      SET bg_gradient = 'from-amber-500 to-amber-600', 
-          image = COALESCE(NULLIF(image, ''), '/images/melvi-founder-box.jpg'),
-          link_type = COALESCE(NULLIF(link_type, ''), 'custom_box')
-      WHERE id = 'banner-1' AND (image IS NULL OR image = '' OR bg_gradient LIKE '%900%');
-
-      UPDATE promo_banners 
-      SET bg_gradient = 'from-rose-900 to-amber-950', 
-          image = COALESCE(NULLIF(image, ''), '/images/melvi-bonbons.jpg'),
-          link_type = COALESCE(NULLIF(link_type, ''), 'store')
-      WHERE id = 'banner-2' AND (image IS NULL OR image = '' OR bg_gradient LIKE '%cocoa%');
-
-      UPDATE promo_banners 
-      SET bg_gradient = 'from-cyan-900 to-blue-950',
-          link_type = COALESCE(NULLIF(link_type, ''), 'tracking')
-      WHERE id = 'banner-3' AND (bg_gradient LIKE '%velvet%' OR bg_gradient IS NULL OR bg_gradient = '');
-
       CREATE TABLE IF NOT EXISTS orders (
         id VARCHAR(64) PRIMARY KEY,
         tracking_number VARCHAR(64) UNIQUE NOT NULL,
@@ -206,170 +188,15 @@ export class DatabaseService implements OnModuleInit, OnModuleDestroy {
   private async seedInitialData() {
     if (!this.isConnected) return;
 
-    const products = [
-      {
-        id: 'prod-melvi-01',
-        name: 'Signature Bonbon Box',
-        tagline: 'A jeweled selection of handcrafted ganaches',
-        price: 1299,
-        originalPrice: 1599,
-        rating: 4.9,
-        reviewsCount: 124,
-        category: 'chocolate-bites',
-        image: '/images/chocolates/choco-1.jpg',
-        description: 'A curated box of handcrafted chocolate bonbons.',
-        badge: 'Bestseller',
-        cocoaPercentage: 70,
-        tags: ['Handcrafted', 'Gift'],
-        isFeatured: true,
-      },
-      {
-        id: 'prod-melvi-02',
-        name: 'Hazelnut Praline Bar',
-        tagline: 'Silky praline wrapped in rich dark chocolate',
-        price: 499,
-        originalPrice: 599,
-        rating: 4.8,
-        reviewsCount: 86,
-        category: 'chocolate-bars',
-        image: '/images/chocolates/choco-2.jpg',
-        description: 'A crisp, buttery hazelnut praline chocolate bar.',
-        badge: 'Customer Favorite',
-        cocoaPercentage: 65,
-        tags: ['Hazelnut', 'Dark chocolate'],
-        isFeatured: true,
-      },
-      {
-        id: 'prod-melvi-03',
-        name: 'Cocoa Truffle Selection',
-        tagline: 'Velvety truffles finished by hand',
-        price: 899,
-        originalPrice: null,
-        rating: 4.9,
-        reviewsCount: 73,
-        category: 'surprise',
-        image: '/images/chocolates/choco-3.jpg',
-        description: 'An assortment of smooth cocoa-dusted chocolate truffles.',
-        badge: 'Artisan Made',
-        cocoaPercentage: 72,
-        tags: ['Truffles', 'Gift'],
-        isFeatured: true,
-      },
-      {
-        id: 'prod-melvi-04',
-        name: 'Pistachio Velvet Bar',
-        tagline: 'Roasted pistachio with a delicate cocoa finish',
-        price: 549,
-        originalPrice: null,
-        rating: 4.8,
-        reviewsCount: 51,
-        category: 'chocolate-bars',
-        image: '/images/chocolates/choco-4.jpg',
-        description: 'A rich chocolate bar with roasted pistachio pieces.',
-        badge: 'Limited Batch',
-        cocoaPercentage: 60,
-        tags: ['Pistachio', 'Limited'],
-        isFeatured: true,
-      },
-      {
-        id: 'prod-melvi-05',
-        name: 'Seasonal Praline Collection',
-        tagline: 'A limited-edition assortment for the season',
-        price: 1499,
-        originalPrice: null,
-        rating: 5,
-        reviewsCount: 39,
-        category: 'limited-editions',
-        image: '/images/chocolates/choco-5.jpg',
-        description: 'A seasonal selection of small-batch pralines.',
-        badge: 'Limited Edition',
-        cocoaPercentage: 68,
-        tags: ['Seasonal', 'Small batch'],
-        isFeatured: true,
-      },
-    ];
-
-    for (const product of products) {
-      await this.pool.query(
-        `INSERT INTO catalog_products (
-          id, name, tagline, price, original_price, rating, reviews_count, category,
-          image, description, badge, cocoa_percentage, tags, is_featured, in_stock
-        ) VALUES ($1,$2,$3,$4,$5,$6,$7,$8,$9,$10,$11,$12,$13,$14,true)
-        ON CONFLICT (id) DO NOTHING`,
-        [
-          product.id,
-          product.name,
-          product.tagline,
-          product.price,
-          product.originalPrice,
-          product.rating,
-          product.reviewsCount,
-          product.category,
-          product.image,
-          product.description,
-          product.badge,
-          product.cocoaPercentage,
-          product.tags,
-          product.isFeatured,
-        ]
-      );
-    }
-
-    const banners = [
-      {
-        id: 'banner-1',
-        title: 'Build a Box to Remember',
-        highlight: 'Personalized gifting',
-        subtitle: 'Choose your chocolates and add a thoughtful note.',
-        ctaText: 'Create Your Box',
-        code: 'CUSTOM',
-        bgGradient: 'from-amber-500 to-amber-600',
-        image: '/images/poster-custom-box.svg',
-        linkType: 'custom_box',
-      },
-      {
-        id: 'banner-2',
-        title: 'A Little Luxury, Delivered',
-        highlight: 'Made for sharing',
-        subtitle: 'Discover handcrafted chocolates for every occasion.',
-        ctaText: 'Explore Collection',
-        code: 'MELVI',
-        bgGradient: 'from-rose-900 to-amber-950',
-        image: '/images/poster-royal-discount.svg',
-        linkType: 'store',
-      },
-      {
-        id: 'banner-3',
-        title: 'Thoughtful from Atelier to Door',
-        highlight: 'Carefully packed',
-        subtitle: 'Follow your order from our atelier to your door.',
-        ctaText: 'Track Order',
-        code: 'COLDPACK',
-        bgGradient: 'from-cyan-900 to-blue-950',
-        image: '/images/poster-cold-chain.svg',
-        linkType: 'tracking',
-      },
-    ];
-
-    for (const banner of banners) {
-      await this.pool.query(
-        `INSERT INTO promo_banners (
-          id, title, highlight, subtitle, cta_text, code, bg_gradient, image, link_type, is_active
-        ) VALUES ($1,$2,$3,$4,$5,$6,$7,$8,$9,true)
-        ON CONFLICT (id) DO NOTHING`,
-        [
-          banner.id,
-          banner.title,
-          banner.highlight,
-          banner.subtitle,
-          banner.ctaText,
-          banner.code,
-          banner.bgGradient,
-          banner.image,
-          banner.linkType,
-        ]
-      );
-    }
+    // Remove any previously seeded dummy/demo rows so only real user-created records exist
+    await this.pool.query(`
+      DELETE FROM catalog_products WHERE id IN ('prod-melvi-01', 'prod-melvi-02', 'prod-melvi-03', 'prod-melvi-04', 'prod-melvi-05');
+      DELETE FROM promo_banners WHERE id IN ('banner-1', 'banner-2', 'banner-3');
+      DELETE FROM promo_coupons WHERE code IN ('MELVIGOLD', 'COLDPACK', 'ROYAL200');
+      DELETE FROM tracking_events WHERE order_id = 'ord-live-demo-1';
+      DELETE FROM orders WHERE id = 'ord-live-demo-1' OR tracking_number = 'MLV-8821-E';
+      DELETE FROM users WHERE id = 'usr-cust-1' OR email = 'sophia@example.com';
+    `);
 
     const email = process.env.ADMIN_EMAIL?.trim().toLowerCase();
     const password = process.env.ADMIN_PASSWORD;

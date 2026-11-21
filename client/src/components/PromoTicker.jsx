@@ -2,11 +2,8 @@ import React from 'react';
 import { Sparkles, Snowflake, ShieldCheck, Gift, Truck } from 'lucide-react';
 
 export default function PromoTicker({ banners = [] }) {
-  const items = banners.length > 0 ? banners : [
-    { highlight: '15% OFF INTRO', subtitle: 'Handcrafted with single-origin cocoa & gold leaf', code: 'MELVIGOLD' },
-    { highlight: 'MELT-PROOF GUARANTEE', subtitle: 'Temperature-controlled luxury cold-chain delivery', code: 'FREE COLD-PACK' },
-    { highlight: 'CUSTOM ATELIER', subtitle: 'Personalized box sleeves, gold notes & flavor selection', code: 'BESPOKE2026' }
-  ];
+  if (!banners || banners.length === 0) return null;
+  const items = banners;
 
   return (
     <div className="relative overflow-hidden bg-gradient-to-r from-velvet-950 via-cocoa-900 to-amber-950 border-y border-gold-500/30 py-2.5 text-xs text-gold-200">
