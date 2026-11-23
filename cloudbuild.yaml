@@ -1,6 +1,7 @@
 # Google Cloud Build CI/CD pipeline (auto-deploy on push to 'dev' branch)
 substitutions:
-  _REGION: asia-south1
+  _REGION: asia-east1
+  _SQL_REGION: asia-south1
   _SERVICE_NAME: melvi-website
   _SQL_INSTANCE: melvi-pg-micro
   _REPO_NAME: melvi-repo
@@ -54,7 +55,7 @@ steps:
       - '--memory=512Mi'
       - '--cpu=1'
       - '--cpu-throttling'
-      - '--add-cloudsql-instances=$PROJECT_ID:${_REGION}:${_SQL_INSTANCE}'
+      - '--add-cloudsql-instances=$PROJECT_ID:${_SQL_REGION}:${_SQL_INSTANCE}'
 
 images:
   - '${_REGION}-docker.pkg.dev/$PROJECT_ID/${_REPO_NAME}/${_SERVICE_NAME}:$COMMIT_SHA'

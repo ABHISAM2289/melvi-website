@@ -8,7 +8,8 @@ on:
 
 env:
   GCP_PROJECT_ID: project-976e1d4c-e4b0-4cf3-bcf
-  GCP_REGION: asia-south1
+  GCP_REGION: asia-east1
+  SQL_REGION: asia-south1
   SERVICE_NAME: melvi-website
   SQL_INSTANCE_NAME: melvi-pg-micro
   DB_NAME: melvi_db
@@ -97,7 +98,7 @@ jobs:
       - name: Deploy Unified Container to Cloud Run
         run: |
           IMAGE_URI="${GCP_REGION}-docker.pkg.dev/${GCP_PROJECT_ID}/${ARTIFACT_REPO}/${SERVICE_NAME}:${GITHUB_SHA}"
-          INSTANCE_CONN="${GCP_PROJECT_ID}:${GCP_REGION}:${SQL_INSTANCE_NAME}"
+          INSTANCE_CONN="${GCP_PROJECT_ID}:${SQL_REGION}:${SQL_INSTANCE_NAME}"
 
           gcloud run deploy "$SERVICE_NAME" \
             --image "$IMAGE_URI" \

@@ -1,7 +1,8 @@
 param(
   [string]$ProjectId = "project-976e1d4c-e4b0-4cf3-bcf",
 
-  [string]$Region = "asia-south1",
+  [string]$Region = "asia-east1",
+  [string]$SqlRegion = "asia-south1",
   [string]$SqlInstanceName = "melvi-pg-micro",
   [string]$DbName = "melvi_db",
   [string]$DbUser = "melvi_user",
@@ -60,7 +61,7 @@ if (-not $existingSql) {
     --database-version=POSTGRES_17 `
     --edition=ENTERPRISE `
     --tier=db-f1-micro `
-    --region=$Region `
+    --region=$SqlRegion `
     --storage-type=HDD `
     --storage-size=10GB `
     --availability-type=ZONAL `
@@ -84,12 +85,12 @@ if (-not $existingUser) {
   gcloud sql users set-password $DbUser --instance=$SqlInstanceName --password=$DbPassword --quiet
 }
 
-$InstanceConnectionName = "${ProjectId}:${Region}:${SqlInstanceName}"
+$InstanceConnectionName = "${ProjectId}:${SqlRegion}:${SqlInstanceName}"
 
 # 6. Deploy unified Frontend + Backend container to Cloud Run (scales to 0 when idle)
 $ExistingImage = $null
 if (-not $Rebuild) {
-  $ImgRow = gcloud artifacts docker images list "$Region-docker.pkg.dev/$ProjectId/cloud-run-source-deploy/$ServiceName" --sort-by="~UPDATE_TIME" --limit=1 --format="value(package,version)" --quiet
+  $ImgRow = gcloud artifacts docker images list "asia-south1-docker.pkg.dev/$ProjectId/cloud-run-source-deploy/$ServiceName" --sort-by="~UPDATE_TIME" --limit=1 --format="value(package,version)" --quiet
   if ($ImgRow) {
     $parts = ($ImgRow | Select-Object -First 1) -split "\s+"
     if ($parts.Length -ge 2) {
